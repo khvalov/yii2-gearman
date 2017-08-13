@@ -43,7 +43,7 @@ class Dispatcher
      * @param string $unique
      * @return string $jobHandle
      */
-    public function background($name, $data = null, $priority = self::NORMAL, $unique = null)
+    public function background($name, $data = null, $priority = self::NORMAL, $unique = null, $timestamp=null)
     {
         $client = $this->getClient()->getClient();
 
@@ -52,16 +52,21 @@ class Dispatcher
         }
 
         $jobHandle = null;
-        switch ($priority) {
-            case self::LOW:
-                $jobHandle = $client->doLowBackground($name, self::serialize($data), $unique);
-                break;
-            case self::HIGH:
-                $jobHandle = $client->doHighBackground($name, self::serialize($data), $unique);
-                break;
-            default:
-                $jobHandle = $client->doBackground($name, self::serialize($data), $unique);
-                break;
+        
+        if($timestamp>0){
+            $jobHandle = $client->doSuspended($name, self::serialize($data), $unique,$timestamp);
+        } else {
+            switch ($priority) {
+                case self::LOW:
+                    $jobHandle = $client->doLowBackground($name, self::serialize($data), $unique);
+                    break;
+                case self::HIGH:
+                    $jobHandle = $client->doHighBackground($name, self::serialize($data), $unique);
+                    break;
+                default:
+                    $jobHandle = $client->doBackground($name, self::serialize($data), $unique);
+                    break;
+            }
         }
 
         if ($client->returnCode() !== GEARMAN_SUCCESS) {
